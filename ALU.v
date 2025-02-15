@@ -1,31 +1,52 @@
-`timescale 1ns / 1ps
+/*
+Lets implement an ALU
 
-`define ALUOP_AND    4'b0000
-`define ALUOP_ORR    4'b0001
-`define ALUOP_ADD    4'b0010
-`define ALUOP_SUB    4'b0110//fix value to 0110
-`define ALUOP_PASSB  4'b0111//fix value to 0111
+inputs: 
+    - A: 64 bits operand
+    - B: 64 bit operand
+    - op: 2 bit operation selector
+output: 
+    - C: 64 bit result
+    - zero: 64 bit zero value
+operations: ADD, SUB, AND, OR, PASSB 
+*/
 
-module alu(
-    //output reg [63:0] busW,
-    output     [63:0] busW,
-    output            zero,
-    input      [63:0] busA,
-    input      [63:0] busB,
-    input      [3:0]  ctrl
+module ALU(
+    output reg [63:0] C, 
+    output zero, 
+    input [63:0] A, 
+    input [63:0] B, 
+    input [2:0] ctrl
 );
-
-wire [63:0] subresults [15:0];
-
-assign busW = subresults[ctrl];
-
-// Assign subresults
-assign subresults[`ALUOP_AND   ] = busA & busB;
-assign subresults[`ALUOP_ORR   ] = busA | busB;
-assign subresults[`ALUOP_ADD   ] = busA + busB;
-assign subresults[`ALUOP_SUB   ] = busA - busB;
-assign subresults[`ALUOP_PASSB ] = busB;
-
-assign zero = (busW==64'b0)?1:0; //busW determines the value of "zero"
+    always @(*) begin
+        case (ctrl)
+            3'b000: begin
+                C = A + B;
+                $display("DEBUG: ALU | ADD | A=%d, B=%d, Result=%d", A, B, C);
+            end
+            3'b001: begin
+                C = A - B;
+                $display("DEBUG: ALU | SUB | A=%d, B=%d, Result=%d", A, B, C);
+            end
+            3'b010: begin
+                C = A & B;
+                $display("DEBUG: ALU | AND | A=%b, B=%b, Result=%b", A, B, C);
+            end
+            3'b011: begin
+                C = A | B;
+                $display("DEBUG: ALU | OR  | A=%b, B=%b, Result=%b", A, B, C);
+            end
+            3'b100: begin
+                C = B; // Used for MOV or similar operations.
+                $display("DEBUG: ALU | MOV | B=%d, Result=%d", B, C);
+            end
+            default: begin
+                C = 64'b0;
+                $display("DEBUG: ALU | INVALID CTRL | ctrl=%b | Defaulting to 0", ctrl);
+            end
+        endcase
+    end
+    
+    assign zero = (C == 64'b0);
 
 endmodule

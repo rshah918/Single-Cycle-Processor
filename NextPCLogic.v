@@ -1,32 +1,60 @@
-`timescale 1ns / 1ps
+`timescale 1ns/1ps
 
-module NextPCLogic(NextPC, CurrentPC, SignExtImm64, Branch, ALUZero, Uncondbranch);
-       	input [63:0] CurrentPC, SignExtImm64;
-       	input Branch, ALUZero, Uncondbranch;
+/*
+Next PC Logic implementation
 
-       	output reg [63:0] NextPC;
+Calculate the memory address of the next instruction. This involves decoding branch instructions to determine the next address. If the current
+    instruction is not a branch instruction, then simply increment the PC
 
-       	reg [63:0] tempImm64;
+Inputs:
+    - 64 bit immediate
+    - Current PC
+    - Unconditional Branch
+    - Conditional Branch
+    - ALUzero
 
+Outputs:
+    - Next PC
+
+Logic:
+
+If unconditional branch, then nextPC = currentPC + imm64 << 2. Unconditional branch immediates are WORD offsets, not byte offsets. So we multiply by 4 to get the byte offset.
+If conditional branch, then nextPC = currentPC + imm64 << 2 ONLY IF aluZero is true. This means that the branch is taken, and we should perform a jump.
+In all other cases, nextPC = currentPC + 4 bytes
+*/
+
+module NextPCLogic(
+    output reg [63:0] nextPC,
+    input [63:0] currentPC,
+    input [63:0] imm64,
+    input unconditionalBranch,
+    input conditionalBranch,
+    input ALUzero,
+    input CLK
+);
+    reg [63:0] byteImm64;
     always @(*) begin
-
-    	tempImm64 = SignExtImm64 << 2; // leftshift by 2 bits
-
-    	// if unconditional branch
-       	if(Uncondbranch) begin
-       		NextPC  <= CurrentPC + tempImm64; // add immediate to current pc
-       	end
-       	else if(Branch) begin // if conditional branch
-       		if(ALUZero == 1) begin // it was zero therefore should jump
-       			NextPC <= CurrentPC + tempImm64;
-       		end
-       		else begin
-       			NextPC <= CurrentPC + 4; // if evaluates to false
-       		end
-       	end
-       	else begin // just move onto the next instruction normally
-       		NextPC <= CurrentPC + 4;
-       	end
-   	end
+        byteImm64 = imm64 << 2;
+        // Unconditional Branch
+        if (unconditionalBranch) begin
+            nextPC = currentPC +  byteImm64;
+        end
+        // Conditional Branch
+        else if (conditionalBranch) begin
+            // Jump if conditional branch is taken
+            if (ALUzero) begin
+                nextPC = currentPC + byteImm64;
+            end
+            // Conditional branch not taken, move to next instruction
+            else begin
+                nextPC = currentPC + 4;
+            end
+        end
+        // Default, not a branch instruction
+        else begin
+                nextPC = currentPC + 4;  
+        end
+    end
 
 endmodule
+

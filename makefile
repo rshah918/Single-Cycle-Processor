@@ -1,10 +1,7 @@
 all: SingleCycleProcessor
 
-# source /softwares/setup/synopsys/setup.vcs.bash
-
-SingleCycleProcessor: SingleCycleProc.v ALU.v immgen.v InstructionMemory.v SingleCycleControl.v RegisterFile.v DataMemory.v NextPCLogic.v SingleCycleProcTest.v
-	iverilog SingleCycleProc.v ALU.v immgen.v InstructionMemory.v SingleCycleControl.v RegisterFile.v DataMemory.v NextPCLogic.v SingleCycleProcTest.v
-
+SingleCycleProcessor: SingleCycleProcessor.v RegisterFile.v NextPCLogic.v InstructionMemory.v ImmediateGenerator.v DataMemory.v Control.v ALU.v SingleCycleProcessor_tb.v
+	iverilog -o SingleCycleProcessor SingleCycleProcessor.v RegisterFile.v NextPCLogic.v InstructionMemory.v ImmediateGenerator.v DataMemory.v Control.v ALU.v SingleCycleProcessor_tb.v
 
 clean:
 	rm -rf *.daidir

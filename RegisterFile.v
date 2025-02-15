@@ -1,23 +1,38 @@
-`timescale 1ns / 1ps
+/*
+Module to read and write to cpu registers.
 
-module RegisterFile(BusA, BusB, BusW, RA, RB, RW, RegWr, Clk);
-	output [63:0] BusA, BusB;
-	input [63:0] BusW;
-	input [4:0] RA, RB, RW;
-	input RegWr;
-	input Clk;
-	//create registers
-	reg [64:0] registerfile [31:0];
-	//assign output registers
-	assign BusA = (RA == 31)?0:registerfile[RA];
-	assign BusB = (RB == 31)?0:registerfile[RB];
+Input: 
+    - RA, RB: Indices of the registers to be read
+    - RW: Index of register to write to
+    - BusW: Data to write into register writeReg
+
+    - Clk: Clock signal
+    - WriteEnable: Signal to enable register write-mode
+    
+Output:
+    - BusA, BusB: Contents of registers A and B
+
+Other implementations dont let you write to register 31... Im gonna allow it until I know why I shouldnt
+*/
 
 
-		always @ (negedge Clk) //use negative edge of the clock
-	begin
-		if(RegWr && RW != 5'b11111) // if Reg Wr is 1 and Write address isnt to reg 31
-		registerfile[RW] <= BusW;
-		else if(RegWr && RW == 5'b11111)
-			registerfile[RW] <= 0;
-	end
+module RegisterFile(output reg [63:0] BusA, output reg [63:0] BusB, input [63:0] BusW, input [4:0] RA, input [4:0] RB, input [4:0] RW, input WriteEnable, input Clk);
+    reg [63:0] registerFile[31:0]; // 32 registers, each 64 bits wide
+    
+    // Initialize all registers to 0 at the beginning of simulation
+    integer i;
+    initial begin
+        for (i = 0; i < 32; i = i + 1) begin
+            registerFile[i] = 64'b0;
+        end
+    end
+
+    always @(*) begin
+            BusA = registerFile[RA];
+            BusB = registerFile[RB];
+        end
+    always @(negedge Clk) begin
+            if (WriteEnable == 1)
+                registerFile[RW] <= BusW;
+        end
 endmodule
